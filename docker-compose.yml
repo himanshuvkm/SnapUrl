@@ -1,0 +1,11 @@
+services:
+  db:
+    image: postgres:17
+    container_name: url_shortener_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: url_shortener
+    ports:
+      - "5432:5432"
