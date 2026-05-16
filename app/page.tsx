@@ -1,264 +1,226 @@
-"use client";
-
-import Image from "next/image";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { Link as LinkIcon, Zap, BarChart3, ShieldCheck, ArrowRight } from "lucide-react";
+'use client'
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Icons } from '@/components/icons'
 
 export default function Home() {
+  const [url, setUrl] = useState('')
+  const [customSlug, setCustomSlug] = useState('')
+  const [result, setResult] = useState<{ shortUrl: string; slug: string } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
+  const router = useRouter()
+
+  async function handleShorten(e: React.FormEvent) {
+    e.preventDefault()
+    const token = localStorage.getItem('token')
+    if (!token) { router.push('/login'); return }
+
+    setLoading(true)
+    setError('')
+    setResult(null)
+
+    try {
+      const res = await fetch('/api/url/shorten', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ longUrl: url, customSlug: customSlug || undefined }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Something went wrong')
+      setResult(data)
+      setUrl('')
+      setCustomSlug('')
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleCopy() {
+    if (!result) return
+    navigator.clipboard.writeText(result.shortUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground overflow-hidden">
-      {/* Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary/20 p-2 rounded-lg">
-              <LinkIcon className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">SnapURL</span>
-          </div>
-          <nav className="hidden md:flex gap-6">
-            <Link href="#features" className="text-sm font-medium text-muted hover:text-foreground transition-colors">Features</Link>
-            <Link href="#how-it-works" className="text-sm font-medium text-muted hover:text-foreground transition-colors">How it works</Link>
-            <Link href="#pricing" className="text-sm font-medium text-muted hover:text-foreground transition-colors">Pricing</Link>
-          </nav>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-muted hover:text-foreground transition-colors hidden sm:block">
-              Log in
-            </Link>
-            <Link href="/signup" className="text-sm font-medium bg-primary text-primary-foreground px-4 py-2 rounded-full hover:bg-primary-hover transition-colors">
-              Get Started
-            </Link>
-          </div>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
+
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--card-border)' }}>
+        <div className="flex items-center gap-2 text-white font-semibold tracking-tight">
+          <Icons.SnapLink className="w-6 h-6" />
+          <span>SnapURL</span>
         </div>
-      </header>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard"
+            className="text-sm font-mono px-3 py-1.5 rounded-md transition-colors"
+            style={{ color: 'var(--muted)' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'white'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
+          >
+            Dashboard
+          </Link>
+          <Link href="/login"
+            className="text-sm font-semibold px-4 py-1.5 rounded-md transition-colors"
+            style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+          >
+            Login
+          </Link>
+        </div>
+      </nav>
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-4">
-          {/* Background Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 blur-[120px] rounded-full opacity-50 pointer-events-none" />
-          
-          <div className="container mx-auto max-w-5xl text-center relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <span className="inline-block py-1 px-3 rounded-full bg-white/5 border border-white/10 text-primary text-sm font-medium mb-6">
-                ✨ The ultimate link management platform
-              </span>
-            </motion.div>
-            
-            <motion.h1 
-              className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              Simplify Your Links,<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">
-                Amplify Your Reach
-              </span>
-            </motion.h1>
-            
-            <motion.p 
-              className="text-xl text-muted max-w-2xl mx-auto mb-10"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              Create short links, custom domains, and track performance with advanced analytics. Build your digital presence with SnapURL.
-            </motion.p>
-            
-            <motion.div 
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <Link href="/signup" className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground text-lg font-medium px-8 py-4 rounded-full hover:bg-primary-hover transition-transform hover:scale-105">
-                Start for free <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link href="#features" className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 text-foreground border border-white/10 text-lg font-medium px-8 py-4 rounded-full hover:bg-white/10 transition-colors">
-                View Features
-              </Link>
-            </motion.div>
-          </div>
-        </section>
+      {/* Hero */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
 
-        {/* Features Section */}
-        <section id="features" className="py-24 bg-card-bg/30 relative">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything you need to manage links</h2>
-              <p className="text-muted text-lg max-w-2xl mx-auto">Powerful features designed for creators, marketers, and businesses.</p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {/* Feature 1 */}
-              <motion.div 
-                className="bg-card-bg border border-card-border p-8 rounded-2xl hover:border-primary/50 transition-colors group"
-                whileHover={{ y: -5 }}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4 }}
-              >
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Zap className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Lightning Fast</h3>
-                <p className="text-muted">Generate short links in milliseconds. Our global CDN ensures your links redirect instantly anywhere in the world.</p>
-              </motion.div>
+        {/* Badge */}
+        <div className="flex items-center gap-2 mb-6 px-3 py-1 rounded-full border text-xs font-mono"
+          style={{ borderColor: 'var(--card-border)', color: 'var(--muted)', background: 'var(--card-bg)' }}>
+          <Icons.activity className="w-3 h-3" style={{ color: 'var(--primary)' }} />
+          <span>Redis-cached · Sub-10ms redirects · Analytics</span>
+        </div>
 
-              {/* Feature 2 */}
-              <motion.div 
-                className="bg-card-bg border border-card-border p-8 rounded-2xl hover:border-primary/50 transition-colors group"
-                whileHover={{ y: -5 }}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-              >
-                <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <BarChart3 className="w-6 h-6 text-purple-400" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Detailed Analytics</h3>
-                <p className="text-muted">Track clicks, geographic data, and referrers in real-time. Make data-driven decisions for your campaigns.</p>
-              </motion.div>
+        {/* Heading */}
+        <h1 className="text-4xl sm:text-5xl font-bold text-white text-center tracking-tight mb-4" style={{ letterSpacing: '-1.5px' }}>
+          Shorten. Track.<br />
+          <span style={{ color: 'var(--primary)' }}>Understand.</span>
+        </h1>
+        <p className="text-center text-sm font-mono mb-10 max-w-md" style={{ color: 'var(--muted)' }}>
+          Enterprise-grade URL shortener with real-time click analytics,
+          device breakdown, and Redis-powered redirects.
+        </p>
 
-              {/* Feature 3 */}
-              <motion.div 
-                className="bg-card-bg border border-card-border p-8 rounded-2xl hover:border-primary/50 transition-colors group"
-                whileHover={{ y: -5 }}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-              >
-                <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <ShieldCheck className="w-6 h-6 text-green-400" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Secure & Reliable</h3>
-                <p className="text-muted">Enterprise-grade security with HTTPS for all links. Custom domains are automatically secured with SSL certificates.</p>
-              </motion.div>
-            </div>
-          </div>
-        </section>
+        {/* Card */}
+        <div className="w-full max-w-lg rounded-xl border p-6 shadow-2xl"
+          style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
 
-        {/* How it Works */}
-        <section id="how-it-works" className="py-24">
-          <div className="container mx-auto px-4 max-w-4xl text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-16">How SnapURL works</h2>
-            
-            <div className="grid md:grid-cols-3 gap-12 relative">
-              {/* Connecting Line */}
-              <div className="hidden md:block absolute top-8 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-primary/10 via-primary/50 to-primary/10 -z-10" />
-              
+          <form onSubmit={handleShorten} className="flex flex-col gap-4">
+
+            {/* Long URL */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-mono uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                Destination URL
+              </label>
               <div className="relative">
-                <div className="w-16 h-16 mx-auto bg-background border-2 border-primary text-primary font-bold text-2xl flex items-center justify-center rounded-full mb-6 z-10 shadow-[0_0_15px_rgba(161,194,255,0.3)]">
-                  1
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style={{ color: '#3f3f46' }}>
+                  <Icons.api className="h-4 w-4" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Paste your link</h3>
-                <p className="text-muted text-sm">Drop in your long, unwieldy URL into our dashboard.</p>
-              </div>
-              
-              <div className="relative">
-                <div className="w-16 h-16 mx-auto bg-background border-2 border-primary text-primary font-bold text-2xl flex items-center justify-center rounded-full mb-6 z-10 shadow-[0_0_15px_rgba(161,194,255,0.3)]">
-                  2
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Customize it</h3>
-                <p className="text-muted text-sm">Add a custom alias or use your own branded domain name.</p>
-              </div>
-              
-              <div className="relative">
-                <div className="w-16 h-16 mx-auto bg-background border-2 border-primary text-primary font-bold text-2xl flex items-center justify-center rounded-full mb-6 z-10 shadow-[0_0_15px_rgba(161,194,255,0.3)]">
-                  3
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Share & Track</h3>
-                <p className="text-muted text-sm">Share your short link and watch the clicks roll in via real-time analytics.</p>
+                <input
+                  type="url"
+                  value={url}
+                  onChange={e => setUrl(e.target.value)}
+                  placeholder="https://your-long-url.com/with/a/very/long/path"
+                  required
+                  className="w-full text-sm rounded-md py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 transition-colors"
+                  style={{
+                    background: 'var(--input-bg)',
+                    border: '1px solid var(--input-border)',
+                    color: 'white',
+                    // @ts-ignore
+                    '--tw-ring-color': 'var(--primary)',
+                  }}
+                />
               </div>
             </div>
-          </div>
-        </section>
 
-        {/* CTA Section */}
-        <section className="py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-primary/5 border-y border-white/5" />
-          <div className="container mx-auto px-4 relative z-10 text-center max-w-3xl">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to supercharge your links?</h2>
-            <p className="text-xl text-muted mb-10">Join thousands of creators and businesses using SnapURL today.</p>
-            <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-lg font-bold px-10 py-5 rounded-full hover:bg-primary-hover transition-transform hover:scale-105 shadow-[0_0_30px_rgba(161,194,255,0.4)]">
-              Create your free account
-            </Link>
-          </div>
-        </section>
+            {/* Custom Slug */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-mono uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                Custom Slug <span className="normal-case" style={{ color: '#3f3f46' }}>(optional)</span>
+              </label>
+              <div className="flex items-center rounded-md border overflow-hidden"
+                style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)' }}>
+                <span className="px-3 py-2.5 text-sm border-r font-mono" style={{ color: '#3f3f46', borderColor: 'var(--input-border)' }}>
+                  snapurl.dev/
+                </span>
+                <input
+                  type="text"
+                  value={customSlug}
+                  onChange={e => setCustomSlug(e.target.value)}
+                  placeholder="my-link"
+                  className="flex-1 bg-transparent text-sm py-2.5 px-3 focus:outline-none"
+                  style={{ color: 'white' }}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-red-400 text-sm p-3 rounded-md border"
+                style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.2)' }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full font-semibold py-2.5 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+            >
+              {loading ? 'Shortening...' : 'Shorten URL'}
+            </button>
+          </form>
+
+          {/* Result */}
+          {result && (
+            <div className="mt-4 p-4 rounded-lg border" style={{ background: '#0d1117', borderColor: 'var(--card-border)' }}>
+              <p className="text-xs font-mono uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
+                Your short URL
+              </p>
+              <div className="flex items-center justify-between gap-3">
+                <a href={result.shortUrl} target="_blank"
+                  className="text-sm font-semibold truncate hover:underline"
+                  style={{ color: 'var(--primary)' }}>
+                  {result.shortUrl}
+                </a>
+                <button
+                  onClick={handleCopy}
+                  className="shrink-0 text-xs font-mono px-3 py-1.5 rounded border transition-colors"
+                  style={{
+                    borderColor: copied ? 'var(--primary)' : 'var(--card-border)',
+                    color: copied ? 'var(--primary)' : 'var(--muted)',
+                  }}
+                >
+                  {copied ? 'copied!' : 'copy'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Stats row */}
+        <div className="flex items-center gap-8 mt-12">
+          {[
+            { icon: <Icons.activity className="w-4 h-4" />, label: 'Real-time analytics' },
+            { icon: <Icons.checkShield className="w-4 h-4" />, label: 'JWT secured' },
+            { icon: <Icons.api className="w-4 h-4" />, label: 'Redis cached' },
+          ].map(({ icon, label }) => (
+            <div key={label} className="flex items-center gap-2 text-xs font-mono" style={{ color: 'var(--muted)' }}>
+              <span style={{ color: 'var(--primary)' }}>{icon}</span>
+              {label}
+            </div>
+          ))}
+        </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 bg-background pt-16 pb-8">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="bg-primary/20 p-1.5 rounded-md">
-                  <LinkIcon className="w-5 h-5 text-primary" />
-                </div>
-                <span className="text-xl font-bold">SnapURL</span>
-              </div>
-              <p className="text-muted text-sm mb-6">
-                The modern link management platform for the digital age.
-              </p>
-              <div className="flex gap-4">
-                <a href="#" className="text-muted hover:text-foreground transition-colors">
-                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                  </svg>
-                </a>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted">Product</h4>
-              <ul className="space-y-3">
-                <li><Link href="#" className="text-sm text-muted hover:text-primary transition-colors">Features</Link></li>
-                <li><Link href="#" className="text-sm text-muted hover:text-primary transition-colors">Pricing</Link></li>
-                <li><Link href="#" className="text-sm text-muted hover:text-primary transition-colors">Integrations</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted">Resources</h4>
-              <ul className="space-y-3">
-                <li><Link href="#" className="text-sm text-muted hover:text-primary transition-colors">Documentation</Link></li>
-                <li><Link href="#" className="text-sm text-muted hover:text-primary transition-colors">Blog</Link></li>
-                <li><Link href="#" className="text-sm text-muted hover:text-primary transition-colors">Support</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted">Legal</h4>
-              <ul className="space-y-3">
-                <li><Link href="#" className="text-sm text-muted hover:text-primary transition-colors">Privacy Policy</Link></li>
-                <li><Link href="#" className="text-sm text-muted hover:text-primary transition-colors">Terms of Service</Link></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted">
-              &copy; {new Date().getFullYear()} SnapURL. All rights reserved.
-            </p>
-            <div className="flex gap-6">
-              <span className="text-sm text-muted flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                System Operational
-              </span>
-            </div>
-          </div>
+      <footer className="flex items-center justify-between px-6 py-4 border-t" style={{ borderColor: 'var(--card-border)' }}>
+        <div className="flex items-center gap-2 text-xs font-mono" style={{ color: 'var(--muted)' }}>
+          <Icons.checkShield className="w-3.5 h-3.5" />
+          AES-256 ENCRYPTION
+        </div>
+        <div className="flex gap-4 text-xs font-mono" style={{ color: 'var(--muted)' }}>
+          <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
+          <Link href="#" className="hover:text-white transition-colors">Status</Link>
         </div>
       </footer>
     </div>
-  );
+  )
 }
