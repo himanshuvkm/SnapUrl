@@ -6,10 +6,14 @@ import { withAuth } from '@/middlewares/withAuth'
 export const GET = withAuth(
   async (_req: NextRequest, { userId, params }) => {
     try {
-      const slug = params?.slug
+      const resolvedParams = await params
+      const slug = resolvedParams?.slug
 
       if (!slug) {
-        return NextResponse.json({ error: 'Slug is required' }, { status: 400 })
+        return NextResponse.json(
+          { error: 'Slug is required' },
+          { status: 400 }
+        )
       }
 
       // Verify ownership
@@ -19,47 +23,82 @@ export const GET = withAuth(
       })
 
       if (!link) {
-        return NextResponse.json({ error: 'Link not found' }, { status: 404 })
+        return NextResponse.json(
+          { error: 'Link not found' },
+          { status: 404 }
+        )
       }
 
       if (link.userId !== userId) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json(
+          { error: 'Forbidden' },
+          { status: 403 }
+        )
       }
 
-      // Total clicks from Redis counter (fast)
+      // Total clicks from Redis counter
       const redisCount = await redis.get(`clicks:${slug}`)
-      const totalClicks = redisCount ? parseInt(redisCount) : link.clicks.length
+      const totalClicks = redisCount
+        ? parseInt(redisCount)
+        : link.clicks.length
 
-      // Device breakdown from user-agent
+      // Device breakdown
       const deviceBreakdown = link.clicks.reduce(
         (acc, click) => {
           const ua = click.userAgent?.toLowerCase() || ''
-          if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
+
+          if (
+            ua.includes('mobile') ||
+            ua.includes('android') ||
+            ua.includes('iphone')
+          ) {
             acc.mobile++
-          } else if (ua.includes('tablet') || ua.includes('ipad')) {
+          } else if (
+            ua.includes('tablet') ||
+            ua.includes('ipad')
+          ) {
             acc.tablet++
           } else {
             acc.desktop++
           }
+
           return acc
         },
         { desktop: 0, mobile: 0, tablet: 0 }
       )
 
-      // Clicks over time — group by date
-      const clicksByDate = link.clicks.reduce<Record<string, number>>((acc, click) => {
-        const date = click.createdAt.toISOString().split('T')[0] // YYYY-MM-DD
-        acc[date] = (acc[date] || 0) + 1
-        return acc
-      }, {})
+      // Group clicks by date
+      const clicksByDate = link.clicks.reduce<Record<string, number>>(
+        (acc, click) => {
+          const date = click.createdAt
+            .toISOString()
+            .split('T')[0]
 
-      // Last 7 days timeline
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date()
-        date.setDate(date.getDate() - i)
-        const key = date.toISOString().split('T')[0]
-        return { date: key, clicks: clicksByDate[key] || 0 }
-      }).reverse()
+          acc[date] = (acc[date] || 0) + 1
+
+          return acc
+        },
+        {}
+      )
+
+      // Last 7 days
+      const last7Days = Array.from(
+        { length: 7 },
+        (_, i) => {
+          const date = new Date()
+
+          date.setDate(date.getDate() - i)
+
+          const key = date
+            .toISOString()
+            .split('T')[0]
+
+          return {
+            date: key,
+            clicks: clicksByDate[key] || 0,
+          }
+        }
+      ).reverse()
 
       return NextResponse.json({
         slug,
@@ -71,7 +110,11 @@ export const GET = withAuth(
       })
     } catch (err) {
       console.error('[ANALYTICS]', err)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      )
     }
   }
 )
