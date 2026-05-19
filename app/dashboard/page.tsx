@@ -58,22 +58,22 @@ export default function Dashboard() {
     <div className="min-h-screen flex flex-col"  style={{ background: 'var(--background)' }}>
 
       {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--card-border)' }}>
-        <Link href="/" className="flex items-center gap-2 text-white font-semibold tracking-tight">
+      <nav className="flex items-center justify-between px-6 py-5 border-b border-[var(--card-border)] bg-black">
+        <Link href="/" className="flex items-center gap-3 text-white">
           <Icons.SnapLink className="w-6 h-6" />
-          <span>SnapURL</span>
+          <span className="font-mono font-bold text-lg tracking-widest uppercase">SnapURL</span>
         </Link>
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-md transition-colors"
+            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-none transition-colors"
             style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
           >
             + New Link
           </Link>
           <button
             onClick={handleLogout}
-            className="text-sm font-mono px-3 py-1.5 rounded-md border transition-colors"
+            className="text-sm font-mono px-3 py-1.5 rounded-none border transition-colors"
             style={{ borderColor: 'var(--card-border)', color: 'var(--muted)' }}
             onMouseEnter={e => e.currentTarget.style.color = 'white'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
@@ -102,7 +102,7 @@ export default function Dashboard() {
             { label: 'Total Clicks', value: totalClicks },
             { label: 'Avg. Clicks', value: links.length ? Math.round(totalClicks / links.length) : 0 },
           ].map(({ label, value }) => (
-            <div key={label} className="rounded-xl border p-4"
+            <div key={label} className="rounded-none border p-4"
               style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
               <p className="text-xs font-mono uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>{label}</p>
               <p className="text-2xl font-bold text-white">{value}</p>
@@ -114,17 +114,17 @@ export default function Dashboard() {
         {loading ? (
           <div className="flex flex-col gap-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 rounded-xl border animate-pulse"
+              <div key={i} className="h-20 rounded-none border animate-pulse"
                 style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }} />
             ))}
           </div>
         ) : links.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 rounded-xl border"
+          <div className="flex flex-col items-center justify-center py-20 rounded-none border"
             style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
             <Icons.api className="w-8 h-8 mb-3" style={{ color: '#3f3f46' }} />
             <p className="text-sm font-mono mb-4" style={{ color: 'var(--muted)' }}>No links yet</p>
             <Link href="/"
-              className="text-sm font-semibold px-4 py-2 rounded-md transition-colors"
+              className="text-sm font-semibold px-4 py-2 rounded-none transition-colors"
               style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
               Shorten your first URL
             </Link>
@@ -137,7 +137,7 @@ export default function Dashboard() {
 
               return (
                 <div key={link.id}
-                  className="rounded-xl border p-4 transition-colors"
+                  className="rounded-none border p-4 transition-colors"
                   style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = '#3f3f46'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--card-border)'}
@@ -171,7 +171,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2 shrink-0">
                       <Link
                         href={`/dashboard/${link.slug}`}
-                        className="text-xs font-mono px-3 py-1.5 rounded border transition-colors"
+                        className="text-xs font-mono px-3 py-1.5 rounded-none border transition-colors"
                         style={{ borderColor: 'var(--card-border)', color: 'var(--muted)' }}
                         onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--card-border)'; e.currentTarget.style.color = 'var(--muted)' }}
@@ -180,7 +180,7 @@ export default function Dashboard() {
                       </Link>
                       <button
                         onClick={() => handleCopy(link.slug)}
-                        className="text-xs font-mono px-3 py-1.5 rounded border transition-colors"
+                        className="text-xs font-mono px-3 py-1.5 rounded-none border transition-colors"
                         style={{
                           borderColor: copied === link.slug ? 'var(--primary)' : 'var(--card-border)',
                           color: copied === link.slug ? 'var(--primary)' : 'var(--muted)',
@@ -191,7 +191,7 @@ export default function Dashboard() {
                       <button
                         onClick={() => handleDelete(link.slug)}
                         disabled={deleting === link.slug}
-                        className="text-xs font-mono px-3 py-1.5 rounded border transition-colors disabled:opacity-40"
+                        className="text-xs font-mono px-3 py-1.5 rounded-none border transition-colors disabled:opacity-40"
                         style={{ borderColor: 'var(--card-border)', color: 'var(--muted)' }}
                         onMouseEnter={e => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#f87171' }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--card-border)'; e.currentTarget.style.color = 'var(--muted)' }}
@@ -208,7 +208,16 @@ export default function Dashboard() {
       </main>
 
       {/* Footer */}
-     <footer className="flex items-center justify-between px-6 py-4 border-t mt-auto" style={{ borderColor: 'var(--card-border)' }} > <div className="flex items-center gap-2 text-xs font-mono" style={{ color: 'var(--muted)' }} > <Icons.checkShield className="w-3.5 h-3.5" /> AES-256 ENCRYPTION </div> <div className="flex gap-4 text-xs font-mono" style={{ color: 'var(--muted)' }} > <Link href="#" className="hover:text-white transition-colors" > Privacy </Link> <Link href="#" className="hover:text-white transition-colors" > Status </Link> </div> </footer>
+     <footer className="flex items-center justify-between px-6 py-6 border-t border-[var(--card-border)] bg-black mt-auto">
+       <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 uppercase tracking-widest">
+         <Icons.checkShield className="w-4 h-4" />
+         <span>AES-256 ENCRYPTION</span>
+       </div>
+       <div className="flex gap-6 text-xs font-mono text-zinc-500 uppercase tracking-widest">
+         <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
+         <Link href="#" className="hover:text-white transition-colors">Status</Link>
+       </div>
+     </footer>
     </div>
   )
 }

@@ -6,19 +6,19 @@
 }
 
 :root {
-  --background: #121212; /* Darker grey/black background */
-  --foreground: #ededed;
+  --background: #000000;
+  --foreground: #ffffff;
   
-  --card-bg: #1c1c1e;
-  --card-border: #2c2c2e;
-  --input-bg: #1c1c1e;
-  --input-border: #2c2c2e;
+  --card-bg: #000000;
+  --card-border: #333333;
+  --input-bg: #000000;
+  --input-border: #333333;
   
-  --primary: #a1c2ff; /* Light blue */
-  --primary-hover: #8ab0f5;
+  --primary: #ffffff;
+  --primary-hover: #e5e5e5;
   --primary-foreground: #000000;
   
-  --muted: #a1a1aa; /* Zinc 400 */
+  --muted: #a1a1aa;
 }
 
 body {

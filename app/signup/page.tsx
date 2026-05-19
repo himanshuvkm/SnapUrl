@@ -53,14 +53,14 @@ export default function SignupPage() {
         {/* Left Column - Form */}
         <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8">
           <div className="w-full max-w-[500px]">
-            <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-8 shadow-2xl">
+            <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-none p-8">
               <h1 className="text-3xl font-semibold text-white mb-2">Create an account</h1>
               <p className="text-zinc-400 text-sm mb-8">Start optimizing your link performance today.</p>
 
               {/* Form */}
               <form onSubmit={handleSignup} className="flex flex-col gap-5">
                 {error && (
-                  <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded-md border border-red-400/20">
+                  <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded-none border border-red-400/20">
                     {error}
                   </div>
                 )}
@@ -73,7 +73,7 @@ export default function SignupPage() {
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Alex Rivera"
                     required
-                    className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-md py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
+                    className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
                   />
                 </div>
 
@@ -85,7 +85,7 @@ export default function SignupPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="alex@company.com"
                     required
-                    className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-md py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
+                    className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
                   />
                 </div>
 
@@ -98,7 +98,7 @@ export default function SignupPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-md py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
+                      className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -109,7 +109,7 @@ export default function SignupPage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-md py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
+                      className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
                     />
                   </div>
                 </div>
@@ -117,7 +117,7 @@ export default function SignupPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-foreground)] font-semibold py-3 rounded-md transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-foreground)] font-semibold py-3 rounded-none transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? "Signing up..." : "Sign up"}
                 </button>
@@ -133,11 +133,11 @@ export default function SignupPage() {
 
               {/* Social Logins */}
               <div className="flex gap-4 mb-6">
-                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
+                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-none border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
                   <Icons.google className="w-5 h-5" />
                   Google
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
+                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-none border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
                   <Icons.github className="w-5 h-5" />
                   GitHub
                 </button>
@@ -168,8 +168,8 @@ export default function SignupPage() {
 
             <div className="flex flex-col gap-4">
               {/* Feature Cards */}
-              <div className="flex items-start gap-4 p-5 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] shadow-lg">
-                <div className="bg-blue-500/20 p-2 rounded-lg shrink-0 mt-1">
+              <div className="flex items-start gap-4 p-5 rounded-none border border-[var(--card-border)] bg-[var(--card-bg)]">
+                <div className="bg-blue-500/20 p-2 rounded-none shrink-0 mt-1">
                   <Icons.activity className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
@@ -180,8 +180,8 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-5 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] shadow-lg">
-                <div className="bg-purple-500/20 p-2 rounded-lg shrink-0 mt-1">
+              <div className="flex items-start gap-4 p-5 rounded-none border border-[var(--card-border)] bg-[var(--card-bg)]">
+                <div className="bg-purple-500/20 p-2 rounded-none shrink-0 mt-1">
                   <Icons.shield className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
@@ -192,8 +192,8 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-5 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] shadow-lg">
-                <div className="bg-zinc-700/50 p-2 rounded-lg shrink-0 mt-1">
+              <div className="flex items-start gap-4 p-5 rounded-none border border-[var(--card-border)] bg-[var(--card-bg)]">
+                <div className="bg-zinc-700/50 p-2 rounded-none shrink-0 mt-1">
                   <Icons.api className="w-5 h-5 text-zinc-300" />
                 </div>
                 <div>

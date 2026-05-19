@@ -54,14 +54,14 @@ export default function Home() {
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
 
       {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--card-border)' }}>
-        <div className="flex items-center gap-2 text-white font-semibold tracking-tight">
+      <nav className="flex items-center justify-between px-6 py-5 border-b border-[var(--card-border)] bg-black">
+        <div className="flex items-center gap-3 text-white">
           <Icons.SnapLink className="w-6 h-6" />
-          <span>SnapURL</span>
+          <span className="font-mono font-bold text-lg tracking-widest uppercase">SnapURL</span>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/dashboard"
-            className="text-sm font-mono px-3 py-1.5 rounded-md transition-colors"
+            className="text-sm font-mono px-3 py-1.5 rounded-none transition-colors"
             style={{ color: 'var(--muted)' }}
             onMouseEnter={e => e.currentTarget.style.color = 'white'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
@@ -69,7 +69,7 @@ export default function Home() {
             Dashboard
           </Link>
           <Link href="/login"
-            className="text-sm font-semibold px-4 py-1.5 rounded-md transition-colors"
+            className="text-sm font-semibold px-4 py-1.5 rounded-none transition-colors"
             style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
           >
             Login
@@ -81,7 +81,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
 
         {/* Badge */}
-        <div className="flex items-center gap-2 mb-6 px-3 py-1 rounded-full border text-xs font-mono"
+        <div className="flex items-center gap-2 mb-6 px-3 py-1 rounded-none border text-xs font-mono"
           style={{ borderColor: 'var(--card-border)', color: 'var(--muted)', background: 'var(--card-bg)' }}>
           <Icons.activity className="w-3 h-3" style={{ color: 'var(--primary)' }} />
           <span>Redis-cached · Sub-10ms redirects · Analytics</span>
@@ -98,7 +98,7 @@ export default function Home() {
         </p>
 
         {/* Card */}
-        <div className="w-full max-w-lg rounded-xl border p-6 shadow-2xl"
+        <div className="w-full max-w-lg rounded-none border p-6"
           style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
 
           <form onSubmit={handleShorten} className="flex flex-col gap-4">
@@ -118,7 +118,7 @@ export default function Home() {
                   onChange={e => setUrl(e.target.value)}
                   placeholder="https://your-long-url.com/with/a/very/long/path"
                   required
-                  className="w-full text-sm rounded-md py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 transition-colors"
+                  className="w-full text-sm rounded-none py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 transition-colors"
                   style={{
                     background: 'var(--input-bg)',
                     border: '1px solid var(--input-border)',
@@ -135,7 +135,7 @@ export default function Home() {
               <label className="text-xs font-mono uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
                 Custom Slug <span className="normal-case" style={{ color: '#3f3f46' }}>(optional)</span>
               </label>
-              <div className="flex items-center rounded-md border overflow-hidden"
+              <div className="flex items-center rounded-none border overflow-hidden"
                 style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)' }}>
                 <span className="px-3 py-2.5 text-sm border-r font-mono" style={{ color: '#3f3f46', borderColor: 'var(--input-border)' }}>
                   snapurl.dev/
@@ -152,7 +152,7 @@ export default function Home() {
             </div>
 
             {error && (
-              <div className="text-red-400 text-sm p-3 rounded-md border"
+              <div className="text-red-400 text-sm p-3 rounded-none border"
                 style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.2)' }}>
                 {error}
               </div>
@@ -161,7 +161,7 @@ export default function Home() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full font-semibold py-2.5 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="w-full font-semibold py-2.5 rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
             >
               {loading ? 'Shortening...' : 'Shorten URL'}
@@ -170,7 +170,7 @@ export default function Home() {
 
           {/* Result */}
           {result && (
-            <div className="mt-4 p-4 rounded-lg border" style={{ background: '#0d1117', borderColor: 'var(--card-border)' }}>
+            <div className="mt-4 p-4 rounded-none border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
               <p className="text-xs font-mono uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
                 Your short URL
               </p>
@@ -182,7 +182,7 @@ export default function Home() {
                 </a>
                 <button
                   onClick={handleCopy}
-                  className="shrink-0 text-xs font-mono px-3 py-1.5 rounded border transition-colors"
+                  className="shrink-0 text-xs font-mono px-3 py-1.5 rounded-none border transition-colors"
                   style={{
                     borderColor: copied ? 'var(--primary)' : 'var(--card-border)',
                     color: copied ? 'var(--primary)' : 'var(--muted)',
@@ -211,12 +211,12 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="flex items-center justify-between px-6 py-4 border-t" style={{ borderColor: 'var(--card-border)' }}>
-        <div className="flex items-center gap-2 text-xs font-mono" style={{ color: 'var(--muted)' }}>
-          <Icons.checkShield className="w-3.5 h-3.5" />
-          AES-256 ENCRYPTION
+      <footer className="flex items-center justify-between px-6 py-6 border-t border-[var(--card-border)] bg-black">
+        <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 uppercase tracking-widest">
+          <Icons.checkShield className="w-4 h-4" />
+          <span>AES-256 ENCRYPTION</span>
         </div>
-        <div className="flex gap-4 text-xs font-mono" style={{ color: 'var(--muted)' }}>
+        <div className="flex gap-6 text-xs font-mono text-zinc-500 uppercase tracking-widest">
           <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
           <Link href="#" className="hover:text-white transition-colors">Status</Link>
         </div>

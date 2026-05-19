@@ -43,24 +43,23 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-[400px]">
-        {/* Logo and Header */}
         <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-white mb-2">
+          <div className="flex items-center gap-3 text-white mb-3">
             <Icons.SnapLink className="w-8 h-8" />
-            <span>SnapLink</span>
+            <span className="font-mono font-bold text-2xl tracking-widest uppercase">SnapURL</span>
           </div>
-          <p className="text-zinc-400 text-sm">Enterprise Intelligence via Every Click</p>
+          <p className="text-zinc-400 text-sm font-mono uppercase tracking-widest">Enterprise Intelligence</p>
         </div>
 
         {/* Card */}
-        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-6 shadow-2xl">
+        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-none p-6">
           {/* Social Logins */}
           <div className="flex gap-4 mb-6">
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
+            <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-none border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
               <Icons.google className="w-5 h-5" />
               Google
             </button>
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
+            <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-none border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
               <Icons.github className="w-5 h-5" />
               GitHub
             </button>
@@ -77,7 +76,7 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             {error && (
-              <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded-md border border-red-400/20">
+              <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded-none border border-red-400/20">
                 {error}
               </div>
             )}
@@ -94,7 +93,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
                   required
-                  className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-md py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
                 />
               </div>
             </div>
@@ -116,7 +115,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-md py-2.5 pl-10 pr-10 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-2.5 pl-10 pr-10 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
                 />
                 <button
                   type="button"
@@ -131,7 +130,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-foreground)] font-semibold py-2.5 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-foreground)] font-semibold py-2.5 rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Logging in..." : "Log in"}
             </button>
@@ -146,14 +145,14 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-12 flex items-center justify-between text-xs font-mono text-zinc-500">
+        <div className="mt-12 flex items-center justify-between text-xs font-mono text-zinc-500 uppercase tracking-widest">
           <div className="flex items-center gap-2">
             <Icons.checkShield className="w-4 h-4" />
             <span>AES-256 ENCRYPTION</span>
           </div>
-          <div className="flex gap-4">
-            <Link href="#" className="hover:text-zinc-300">Status</Link>
-            <Link href="#" className="hover:text-zinc-300">Privacy</Link>
+          <div className="flex gap-6">
+            <Link href="#" className="hover:text-white transition-colors">Status</Link>
+            <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
           </div>
         </div>
       </div>
