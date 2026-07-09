@@ -17,6 +17,15 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  // New Link modal state
+  const [showModal, setShowModal] = useState(false)
+  const [newUrl, setNewUrl] = useState('')
+  const [newSlug, setNewSlug] = useState('')
+  const [addLoading, setAddLoading] = useState(false)
+  const [addError, setAddError] = useState('')
+
   const router = useRouter()
 
   useEffect(() => {
@@ -37,13 +46,83 @@ export default function Dashboard() {
 
   async function handleDelete(slug: string) {
     setDeleting(slug)
-    const token = localStorage.getItem('token')
-    await fetch(`/api/url/${slug}/delete`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    setLinks(prev => prev.filter(l => l.slug !== slug))
-    setDeleting(null)
+    setDeleteError(null)
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/url/${slug}/delete`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (res.status === 401) {
+        // Token expired or invalid — log out
+        localStorage.removeItem('token')
+        localStorage.removeItem('userId')
+        router.push('/login')
+        return
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setDeleteError(data.error || 'Failed to delete link')
+        return
+      }
+
+      setLinks(prev => prev.filter(l => l.slug !== slug))
+    } catch {
+      setDeleteError('Network error. Please try again.')
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  async function handleAddLink(e: React.FormEvent) {
+    e.preventDefault()
+    setAddLoading(true)
+    setAddError('')
+
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) { router.push('/login'); return }
+
+      const res = await fetch('/api/url/shorten', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ longUrl: newUrl, customSlug: newSlug || undefined }),
+      })
+
+      if (res.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('userId')
+        router.push('/login')
+        return
+      }
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Something went wrong')
+
+      // Prepend the new link to the list
+      const newLink: Link_ = {
+        id: data.slug,           // use slug as temp id until page refresh
+        slug: data.slug,
+        longUrl: data.longUrl,
+        createdAt: data.createdAt,
+        _count: { clicks: 0 },
+      }
+      setLinks(prev => [newLink, ...prev])
+
+      // Reset and close modal
+      setNewUrl('')
+      setNewSlug('')
+      setShowModal(false)
+    } catch (err: any) {
+      setAddError(err.message)
+    } finally {
+      setAddLoading(false)
+    }
   }
 
   function handleLogout() {
@@ -64,13 +143,13 @@ export default function Dashboard() {
           <span className="font-mono font-bold text-lg tracking-widest uppercase">SnapURL</span>
         </Link>
         <div className="flex items-center gap-3">
-          <Link
-            href="/"
+          <button
+            onClick={() => { setAddError(''); setShowModal(true) }}
             className="flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-none transition-colors"
             style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
           >
             + New Link
-          </Link>
+          </button>
           <button
             onClick={handleLogout}
             className="text-sm font-mono px-3 py-1.5 rounded-none border transition-colors"
@@ -110,6 +189,15 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* Delete error banner */}
+        {deleteError && (
+          <div className="mb-4 text-red-400 text-sm p-3 rounded-none border"
+            style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.2)' }}>
+            {deleteError}
+            <button className="ml-3 opacity-60 hover:opacity-100" onClick={() => setDeleteError(null)}>✕</button>
+          </div>
+        )}
+
         {/* Links list */}
         {loading ? (
           <div className="flex flex-col gap-3">
@@ -123,11 +211,12 @@ export default function Dashboard() {
             style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
             <Icons.api className="w-8 h-8 mb-3" style={{ color: '#3f3f46' }} />
             <p className="text-sm font-mono mb-4" style={{ color: 'var(--muted)' }}>No links yet</p>
-            <Link href="/"
+            <button
+              onClick={() => { setAddError(''); setShowModal(true) }}
               className="text-sm font-semibold px-4 py-2 rounded-none transition-colors"
               style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
               Shorten your first URL
-            </Link>
+            </button>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -218,6 +307,106 @@ export default function Dashboard() {
          <Link href="#" className="hover:text-white transition-colors">Status</Link>
        </div>
      </footer>
+
+      {/* New Link Modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}
+        >
+          <div
+            className="w-full max-w-md rounded-none border p-6"
+            style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-sm font-mono uppercase tracking-widest text-white">New Link</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-xs font-mono px-2 py-1"
+                style={{ color: 'var(--muted)' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddLink} className="flex flex-col gap-4">
+              {/* Long URL */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                  Destination URL
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style={{ color: '#3f3f46' }}>
+                    <Icons.api className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="url"
+                    value={newUrl}
+                    onChange={e => setNewUrl(e.target.value)}
+                    placeholder="https://your-long-url.com/..."
+                    required
+                    autoFocus
+                    className="w-full text-sm rounded-none py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--input-border)',
+                      color: 'white',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Custom Slug */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                  Custom Slug <span className="normal-case" style={{ color: '#3f3f46' }}>(optional)</span>
+                </label>
+                <div className="flex items-center rounded-none border overflow-hidden"
+                  style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)' }}>
+                  <span className="px-3 py-2.5 text-sm border-r font-mono" style={{ color: '#3f3f46', borderColor: 'var(--input-border)' }}>
+                    {typeof window !== 'undefined' ? window.location.host : ''}/
+                  </span>
+                  <input
+                    type="text"
+                    value={newSlug}
+                    onChange={e => setNewSlug(e.target.value)}
+                    placeholder="my-link"
+                    className="flex-1 bg-transparent text-sm py-2.5 px-3 focus:outline-none"
+                    style={{ color: 'white' }}
+                  />
+                </div>
+              </div>
+
+              {addError && (
+                <div className="text-red-400 text-sm p-3 rounded-none border"
+                  style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.2)' }}>
+                  {addError}
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 text-sm font-mono py-2.5 rounded-none border transition-colors"
+                  style={{ borderColor: 'var(--card-border)', color: 'var(--muted)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addLoading}
+                  className="flex-1 font-semibold py-2.5 rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+                >
+                  {addLoading ? 'Shortening...' : 'Shorten URL'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

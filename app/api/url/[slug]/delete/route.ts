@@ -22,11 +22,19 @@ export const DELETE = withAuth(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
 
-      await prisma.link.delete({ where: { slug } })
+      // Delete clicks first (FK constraint), then the link — all in one transaction
+      await prisma.$transaction([
+        prisma.click.deleteMany({ where: { linkId: link.id } }),
+        prisma.link.delete({ where: { slug } }),
+      ])
 
-      // Always invalidate cache when deleting
-      await redis.del(`url:${slug}`)
-      await redis.del(`clicks:${slug}`)
+      // Invalidate cache — best-effort, don't let Redis failures block the response
+      try {
+        await redis.del(`url:${slug}`)
+        await redis.del(`clicks:${slug}`)
+      } catch (cacheErr) {
+        console.warn('[DELETE_LINK] Redis cache invalidation failed (non-fatal):', cacheErr)
+      }
 
       return NextResponse.json({ message: 'Link deleted' })
     } catch (err) {
