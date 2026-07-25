@@ -31,7 +31,7 @@ export function withAuth(handler: AuthenticatedHandler) {
         : undefined
 
       return handler(req, { userId, params: resolvedParams })
-    } catch (err) {
+    } catch {
       return NextResponse.json(
         { error: 'Invalid or expired token' },
         { status: 401 }
