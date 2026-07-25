@@ -53,25 +53,8 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-none p-6">
-          {/* Social Logins */}
-          <div className="flex gap-4 mb-6">
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-none border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
-              <Icons.google className="w-5 h-5" />
-              Google
-            </button>
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-none border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
-              <Icons.github className="w-5 h-5" />
-              GitHub
-            </button>
-          </div>
-
-          <div className="relative flex items-center py-4 mb-2">
-            <div className="flex-grow border-t border-[var(--card-border)]"></div>
-            <span className="flex-shrink-0 mx-4 text-xs font-mono text-zinc-500 uppercase tracking-widest">
-              OR CONTINUE WITH
-            </span>
-            <div className="flex-grow border-t border-[var(--card-border)]"></div>
-          </div>
+          <h1 className="text-2xl font-semibold text-white mb-1">Welcome back</h1>
+          <p className="text-zinc-400 text-sm mb-6">Enter your credentials to access your account.</p>
 
           {/* Form */}
           <form onSubmit={handleLogin} className="flex flex-col gap-4">

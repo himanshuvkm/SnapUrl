@@ -123,27 +123,7 @@ export default function SignupPage() {
                 </button>
               </form>
 
-              <div className="relative flex items-center py-6">
-                <div className="flex-grow border-t border-[var(--card-border)]"></div>
-                <span className="flex-shrink-0 mx-4 text-xs font-mono text-zinc-500 uppercase tracking-widest">
-                  OR CONTINUE WITH
-                </span>
-                <div className="flex-grow border-t border-[var(--card-border)]"></div>
-              </div>
-
-              {/* Social Logins */}
-              <div className="flex gap-4 mb-6">
-                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-none border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
-                  <Icons.google className="w-5 h-5" />
-                  Google
-                </button>
-                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-none border border-[var(--card-border)] hover:bg-zinc-800/50 transition-colors text-sm text-zinc-300 font-medium">
-                  <Icons.github className="w-5 h-5" />
-                  GitHub
-                </button>
-              </div>
-
-              <div className="text-center text-sm text-zinc-400 mt-2">
+              <div className="text-center text-sm text-zinc-400 mt-6">
                 Already have an account?{" "}
                 <Link href="/login" className="text-white font-semibold hover:underline">
                   Log in
