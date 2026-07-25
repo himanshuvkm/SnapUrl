@@ -12,22 +12,26 @@ export async function rateLimiter(req: NextRequest): Promise<NextResponse | null
 
   const key = `rate_limit:${ip}`
 
-  const current = await redis.incr(key)
+  try {
+    const current = await redis.incr(key)
 
-  if (current === 1) {
-    // First request in this window — set expiry
-    await redis.expire(key, WINDOW_SECONDS)
-  }
+    if (current === 1) {
+      // First request in this window — set expiry
+      await redis.expire(key, WINDOW_SECONDS)
+    }
 
-  if (current > MAX_REQUESTS) {
-    const ttl = await redis.ttl(key)
-    return NextResponse.json(
-      { error: 'Too many requests', retryAfter: ttl },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(ttl) },
-      }
-    )
+    if (current > MAX_REQUESTS) {
+      const ttl = await redis.ttl(key)
+      return NextResponse.json(
+        { error: 'Too many requests', retryAfter: ttl },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(ttl) },
+        }
+      )
+    }
+  } catch (err) {
+    console.warn('[RATE_LIMITER] Redis rate limiting unavailable (failing open):', err)
   }
 
   return null // null means "allowed, continue"

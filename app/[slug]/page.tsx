@@ -13,12 +13,16 @@ export default async function RedirectPage({ params }: Props) {
   const start = Date.now()
 
   // 1. Check Redis cache first
-  const cached = await redis.get(`url:${slug}`)
+  try {
+    const cached = await redis.get(`url:${slug}`)
 
-  if (cached) {
-    console.log(`Cache HIT for ${slug} — ${Date.now() - start}ms`)
-    await trackClick(slug)
-    redirect(cached)
+    if (cached) {
+      console.log(`Cache HIT for ${slug} — ${Date.now() - start}ms`)
+      await trackClick(slug)
+      redirect(cached)
+    }
+  } catch (err) {
+    console.warn(`[CACHE_READ] Redis read failed for ${slug} (falling back to DB):`, err)
   }
 
   // 2. Cache miss — query DB
@@ -29,7 +33,11 @@ export default async function RedirectPage({ params }: Props) {
   console.log(`Cache MISS for ${slug} — ${Date.now() - start}ms`)
 
   // 3. Write to cache for next time
-  await redis.set(`url:${slug}`, link.longUrl, 'EX', 60 * 60 * 24)
+  try {
+    await redis.set(`url:${slug}`, link.longUrl, 'EX', 60 * 60 * 24)
+  } catch (err) {
+    console.warn(`[CACHE_WRITE] Redis write failed for ${slug}:`, err)
+  }
 
   await trackClick(slug)
   redirect(link.longUrl)

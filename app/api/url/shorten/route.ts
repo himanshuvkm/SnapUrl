@@ -48,7 +48,11 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     });
 
     // Pre-warm the cache immediately after creation
-    await redis.set(`url:${slug}`, longUrl, "EX", 60 * 60 * 24);
+    try {
+      await redis.set(`url:${slug}`, longUrl, "EX", 60 * 60 * 24);
+    } catch (err) {
+      console.warn(`[SHORTEN] Redis cache write failed for ${slug}:`, err);
+    }
 
     return NextResponse.json(
       {

@@ -49,32 +49,21 @@ SnapURL is a full-stack URL shortener that goes beyond basic link shortening. It
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│                   Client                         │
-└─────────────────────┬───────────────────────────┘
-                      │ HTTP
-┌─────────────────────▼───────────────────────────┐
-│              Next.js App (Port 3000)             │
-│                                                  │
-│  ┌─────────────┐    ┌──────────────────────────┐ │
-│  │  API Routes │    │     Page Routes           │ │
-│  │  /api/url   │    │  /[slug] → redirect       │ │
-│  │  /api/auth  │    │  /dashboard               │ │
-│  └──────┬──────┘    └──────────┬───────────────┘ │
-│         │                      │                  │
-│  ┌──────▼──────────────────────▼───────────────┐ │
-│  │              Redis (Cache Layer)             │ │
-│  │   url:{slug} → longUrl  (TTL: 24hr)         │ │
-│  │   rate_limit:{ip} → count (TTL: 60s)        │ │
-│  │   clicks:{slug} → count                     │ │
-│  └──────────────────────┬──────────────────────┘ │
-│                         │ cache miss only         │
-│  ┌──────────────────────▼──────────────────────┐ │
-│  │           PostgreSQL (Source of Truth)       │ │
-│  │   users · links · clicks                    │ │
-│  └─────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────┘
+```text
+                    Users
+                      │
+                      ▼
+                 Next.js 16
+                  /       \
+                 /         \
+                v           v
+        Upstash Redis    Supabase
+      (or Docker Redis)  PostgreSQL
+                │           │
+              Cache       Prisma
+           Rate Limit     Users
+            Counters      Links
+                          Clicks
 ```
 
 ---

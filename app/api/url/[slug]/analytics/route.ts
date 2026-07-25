@@ -36,11 +36,14 @@ export const GET = withAuth(
         )
       }
 
-      // Total clicks from Redis counter
-      const redisCount = await redis.get(`clicks:${slug}`)
-      const totalClicks = redisCount
-        ? parseInt(redisCount)
-        : link.clicks.length
+      // Total clicks from Redis counter with DB fallback
+      let redisCount: string | null = null
+      try {
+        redisCount = await redis.get(`clicks:${slug}`)
+      } catch (err) {
+        console.warn(`[ANALYTICS] Redis click count lookup failed for ${slug} (falling back to DB):`, err)
+      }
+      const totalClicks = redisCount ? parseInt(redisCount) : link.clicks.length
 
       // Device breakdown
       const deviceBreakdown = link.clicks.reduce(
