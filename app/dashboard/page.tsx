@@ -36,7 +36,7 @@ export default function Dashboard() {
       .then(r => r.json())
       .then(d => { setLinks(d.links || []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }, [router])
 
   function handleCopy(slug: string) {
     navigator.clipboard.writeText(`${window.location.origin}/${slug}`)
@@ -117,9 +117,8 @@ export default function Dashboard() {
       // Reset and close modal
       setNewUrl('')
       setNewSlug('')
-      setShowModal(false)
-    } catch (err: any) {
-      setAddError(err.message)
+    } catch (err: unknown) {
+      setAddError(err instanceof Error ? err.message : 'Failed to shorten URL')
     } finally {
       setAddLoading(false)
     }

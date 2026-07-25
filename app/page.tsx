@@ -36,8 +36,8 @@ export default function Home() {
       setResult(data)
       setUrl('')
       setCustomSlug('')
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setLoading(false)
     }
@@ -123,7 +123,7 @@ export default function Home() {
                     background: 'var(--input-bg)',
                     border: '1px solid var(--input-border)',
                     color: 'white',
-                    // @ts-ignore
+                    // @ts-expect-error custom CSS property
                     '--tw-ring-color': 'var(--primary)',
                   }}
                 />

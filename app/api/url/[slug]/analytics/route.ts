@@ -45,8 +45,14 @@ export const GET = withAuth(
       }
       const totalClicks = redisCount ? parseInt(redisCount) : link.clicks.length
 
+      type DeviceBreakdown = {
+        desktop: number
+        mobile: number
+        tablet: number
+      }
+
       // Device breakdown
-      const deviceBreakdown = link.clicks.reduce(
+      const deviceBreakdown = link.clicks.reduce<DeviceBreakdown>(
         (acc, click) => {
           const ua = click.userAgent?.toLowerCase() || ''
 

@@ -4,8 +4,9 @@ import { vi } from 'vitest'
 process.env.JWT_SECRET = 'test-secret-for-vitest'
 process.env.NEXT_PUBLIC_BASE_URL = 'http://localhost:3000'
 
+import RedisMock from 'ioredis-mock'
+
 vi.mock('@/lib/redis', () => {
-  const RedisMock = require('ioredis-mock')
   return { redis: new RedisMock() }
 })
 
