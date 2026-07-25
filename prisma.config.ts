@@ -9,6 +9,6 @@ export default defineConfig({
   },
 
   datasource: {
-    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/snapurl',
+    url: process.env.DIRECT_URL || process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/snapurl',
   },
 })

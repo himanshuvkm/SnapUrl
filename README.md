@@ -164,11 +164,42 @@ npm run dev
 
 ---
 
+## PostgreSQL Database Setup
+
+SnapURL supports PostgreSQL via Prisma ORM using either local Docker PostgreSQL or production-grade Supabase PostgreSQL.
+
+### Local (Docker PostgreSQL)
+Set standard local database URLs in `.env`:
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/snapurl
+DIRECT_URL=postgresql://postgres:postgres@localhost:5432/snapurl
+```
+
+### Production / Managed (Supabase PostgreSQL)
+Configure your Supabase PostgreSQL credentials in `.env`:
+```env
+DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
+```
+
+To run Prisma migrations against Supabase:
+```bash
+npx prisma migrate deploy
+```
+
+---
+
 ## Environment Variables
 
 ```env
+# Database (Docker / Supabase)
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/snapurl
+DIRECT_URL=postgresql://postgres:postgres@localhost:5432/snapurl
+
+# Cache & Rate Limiting (Docker Redis)
 REDIS_URL=redis://localhost:6379
+
+# Application Auth & Configuration
 JWT_SECRET=your-super-secret-key
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```

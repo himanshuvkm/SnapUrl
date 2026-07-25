@@ -11,6 +11,7 @@ vi.mock('@/lib/redis', () => {
 
 vi.mock('@/lib/db', () => ({
   prisma: {
+    $transaction: vi.fn(async (promises) => Promise.all(promises)),
     user: {
       findUnique: vi.fn(),
       create: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('@/lib/db', () => ({
     },
     click: {
       create: vi.fn(),
+      deleteMany: vi.fn(),
     },
   },
 }))
