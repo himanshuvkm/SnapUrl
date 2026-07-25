@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Click } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { redis } from '@/lib/redis'
 import { withAuth } from '@/middlewares/withAuth'
@@ -53,7 +54,7 @@ export const GET = withAuth(
 
       // Device breakdown
       const deviceBreakdown = link.clicks.reduce<DeviceBreakdown>(
-        (acc, click) => {
+        (acc: DeviceBreakdown, click: Click): DeviceBreakdown => {
           const ua = click.userAgent?.toLowerCase() || ''
 
           if (
@@ -78,7 +79,7 @@ export const GET = withAuth(
 
       // Group clicks by date
       const clicksByDate = link.clicks.reduce<Record<string, number>>(
-        (acc, click) => {
+        (acc: Record<string, number>, click: Click): Record<string, number> => {
           const date = click.createdAt
             .toISOString()
             .split('T')[0]
