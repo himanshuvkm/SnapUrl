@@ -7,11 +7,11 @@ type AuthenticatedHandler = (
 ) => Promise<NextResponse>
 
 type RouteContext = {
-  params?: Promise<Record<string, string>> | Record<string, string>
+  params: Promise<Record<string, string>>
 }
 
 export function withAuth(handler: AuthenticatedHandler) {
-  return async (req: NextRequest, context: RouteContext = {}) => {
+  return async (req: NextRequest, context: RouteContext) => {
     try {
       const authHeader = req.headers.get('authorization')
 
@@ -26,9 +26,7 @@ export function withAuth(handler: AuthenticatedHandler) {
       const { userId } = verifyToken(token)
 
       // Await params if it's a Promise (Next.js 15)
-      const resolvedParams = context.params
-        ? await Promise.resolve(context.params)
-        : undefined
+      const resolvedParams = await (context?.params ?? Promise.resolve({}))
 
       return handler(req, { userId, params: resolvedParams })
     } catch {

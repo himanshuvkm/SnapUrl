@@ -1,10 +1,14 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+
+import React, { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icons } from '@/components/icons'
+import { QRModal } from '@/components/qr-modal'
+import { ConfirmDialog } from '@/components/confirm-dialog'
+import { useToast } from '@/components/toast'
 
-interface Link_ {
+interface LinkItem {
   id: string
   slug: string
   longUrl: string
@@ -13,66 +17,121 @@ interface Link_ {
 }
 
 export default function Dashboard() {
-  const [links, setLinks] = useState<Link_[]>([])
+  const [links, setLinks] = useState<LinkItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [copied, setCopied] = useState<string | null>(null)
-  const [deleting, setDeleting] = useState<string | null>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
+  
+  // Search & Filters
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterMode, setFilterMode] = useState<'all' | 'active' | 'hightraffic'>('all')
+  const [sortBy, setSortBy] = useState<'newest' | 'clicks'>('newest')
 
-  // New Link modal state
-  const [showModal, setShowModal] = useState(false)
+  // QR Modal state
+  const [qrState, setQrState] = useState<{ isOpen: boolean; shortUrl: string; slug: string }>({
+    isOpen: false,
+    shortUrl: '',
+    slug: '',
+  })
+
+  // Delete Confirm Modal state
+  const [deleteState, setDeleteState] = useState<{ isOpen: boolean; slug: string | null; loading: boolean }>({
+    isOpen: false,
+    slug: null,
+    loading: false,
+  })
+
+  // New Link Modal state
+  const [showAddModal, setShowAddModal] = useState(false)
   const [newUrl, setNewUrl] = useState('')
   const [newSlug, setNewSlug] = useState('')
   const [addLoading, setAddLoading] = useState(false)
   const [addError, setAddError] = useState('')
 
   const router = useRouter()
+  const { addToast } = useToast()
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    if (!token) { router.push('/login'); return }
+    if (!token) {
+      router.push('/login')
+      return
+    }
 
     fetch('/api/url', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(d => { setLinks(d.links || []); setLoading(false) })
+      .then(r => {
+        if (r.status === 401) {
+          localStorage.removeItem('token')
+          router.push('/login')
+          return { links: [] }
+        }
+        return r.json()
+      })
+      .then(d => {
+        setLinks(d.links || [])
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [router])
 
+  // Filter & Sort logic
+  const filteredLinks = useMemo(() => {
+    return links
+      .filter(link => {
+        const matchesSearch =
+          link.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          link.longUrl.toLowerCase().includes(searchQuery.toLowerCase())
+        if (!matchesSearch) return false
+
+        if (filterMode === 'active') return link._count.clicks > 0
+        if (filterMode === 'hightraffic') return link._count.clicks >= 10
+        return true
+      })
+      .sort((a, b) => {
+        if (sortBy === 'clicks') return b._count.clicks - a._count.clicks
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      })
+  }, [links, searchQuery, filterMode, sortBy])
+
+  const totalClicks = links.reduce((sum, l) => sum + l._count.clicks, 0)
+  const topLink = useMemo(() => {
+    if (links.length === 0) return null
+    return [...links].sort((a, b) => b._count.clicks - a._count.clicks)[0]
+  }, [links])
+
   function handleCopy(slug: string) {
-    navigator.clipboard.writeText(`${window.location.origin}/${slug}`)
-    setCopied(slug)
-    setTimeout(() => setCopied(null), 2000)
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const shortUrl = `${origin}/${slug}`
+    navigator.clipboard.writeText(shortUrl)
+    setCopiedSlug(slug)
+    addToast('Link copied to clipboard', 'success')
+    setTimeout(() => setCopiedSlug(null), 2000)
   }
 
-  async function handleDelete(slug: string) {
-    setDeleting(slug)
-    setDeleteError(null)
+  function confirmDelete(slug: string) {
+    setDeleteState({ isOpen: true, slug, loading: false })
+  }
+
+  async function handleDelete() {
+    if (!deleteState.slug) return
+    setDeleteState(prev => ({ ...prev, loading: true }))
+
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch(`/api/url/${slug}/delete`, {
+      const res = await fetch(`/api/url/${deleteState.slug}/delete`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      if (res.status === 401) {
-        // Token expired or invalid — log out
-        localStorage.removeItem('token')
-        localStorage.removeItem('userId')
-        router.push('/login')
-        return
-      }
-
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        setDeleteError(data.error || 'Failed to delete link')
-        return
+        throw new Error('Failed to delete link')
       }
 
-      setLinks(prev => prev.filter(l => l.slug !== slug))
+      setLinks(prev => prev.filter(l => l.slug !== deleteState.slug))
+      addToast('Link deleted', 'success')
     } catch {
-      setDeleteError('Network error. Please try again.')
+      addToast('Failed to delete link', 'error')
     } finally {
-      setDeleting(null)
+      setDeleteState({ isOpen: false, slug: null, loading: false })
     }
   }
 
@@ -83,7 +142,10 @@ export default function Dashboard() {
 
     try {
       const token = localStorage.getItem('token')
-      if (!token) { router.push('/login'); return }
+      if (!token) {
+        router.push('/login')
+        return
+      }
 
       const res = await fetch('/api/url/shorten', {
         method: 'POST',
@@ -94,29 +156,22 @@ export default function Dashboard() {
         body: JSON.stringify({ longUrl: newUrl, customSlug: newSlug || undefined }),
       })
 
-      if (res.status === 401) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('userId')
-        router.push('/login')
-        return
-      }
-
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Something went wrong')
+      if (!res.ok) throw new Error(data.error || 'Failed to shorten URL')
 
-      // Prepend the new link to the list
-      const newLink: Link_ = {
-        id: data.slug,           // use slug as temp id until page refresh
+      const newLink: LinkItem = {
+        id: data.slug,
         slug: data.slug,
         longUrl: data.longUrl,
-        createdAt: data.createdAt,
+        createdAt: data.createdAt || new Date().toISOString(),
         _count: { clicks: 0 },
       }
-      setLinks(prev => [newLink, ...prev])
 
-      // Reset and close modal
+      setLinks(prev => [newLink, ...prev])
+      addToast('URL shortened successfully', 'success')
       setNewUrl('')
       setNewSlug('')
+      setShowAddModal(false)
     } catch (err: unknown) {
       setAddError(err instanceof Error ? err.message : 'Failed to shorten URL')
     } finally {
@@ -126,165 +181,247 @@ export default function Dashboard() {
 
   function handleLogout() {
     localStorage.removeItem('token')
-    localStorage.removeItem('userId')
+    addToast('Logged out', 'info')
     router.push('/')
   }
 
-  const totalClicks = links.reduce((sum, l) => sum + l._count.clicks, 0)
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
   return (
-    <div className="min-h-screen flex flex-col"  style={{ background: 'var(--background)' }}>
+    <div className="min-h-screen flex flex-col bg-[#F8F7F4] text-[#111111] bg-grid-pattern">
 
       {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-5 border-b border-[var(--card-border)] bg-black">
-        <Link href="/" className="flex items-center gap-3 text-white">
-          <Icons.SnapLink className="w-6 h-6" />
-          <span className="font-mono font-bold text-lg tracking-widest uppercase">SnapURL</span>
-        </Link>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => { setAddError(''); setShowModal(true) }}
-            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-none transition-colors"
-            style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
-          >
-            + New Link
-          </button>
-          <button
-            onClick={handleLogout}
-            className="text-sm font-mono px-3 py-1.5 rounded-none border transition-colors"
-            style={{ borderColor: 'var(--card-border)', color: 'var(--muted)' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'white'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
-          >
-            Logout
-          </button>
+      <nav className="sticky top-0 z-40 bg-[#F8F7F4]/90 backdrop-blur-md border-b border-[#DCD8CF]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 font-bold text-lg text-[#111111]">
+            <div className="w-8 h-8 rounded-lg bg-[#111111] flex items-center justify-center text-white">
+              <Icons.SnapLink className="w-4 h-4 text-indigo-400" />
+            </div>
+            <span>SnapURL</span>
+          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { setAddError(''); setShowAddModal(true) }}
+              className="text-xs sm:text-sm font-semibold text-white bg-[#111111] hover:bg-[#222222] px-3.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-[0_1px_0_rgba(17,17,17,0.04)]"
+            >
+              <Icons.plus className="w-4 h-4" />
+              New Link
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-xs sm:text-sm font-medium text-[#71717A] hover:text-[#111111] px-3 py-1.5 rounded-lg border border-[#DCD8CF] bg-white hover:bg-[#F0EEE8] transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </nav>
 
-      <main className="flex-1 max-w-3xl mx-auto px-4 py-10">
+      {/* Main Content */}
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white tracking-tight mb-1" style={{ letterSpacing: '-0.5px' }}>
-            My Links
-          </h1>
-          <p className="text-sm font-mono" style={{ color: 'var(--muted)' }}>
-            Manage and track your shortened URLs
-          </p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {[
-            { label: 'Total Links', value: links.length },
-            { label: 'Total Clicks', value: totalClicks },
-            { label: 'Avg. Clicks', value: links.length ? Math.round(totalClicks / links.length) : 0 },
-          ].map(({ label, value }) => (
-            <div key={label} className="rounded-none border p-4"
-              style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
-              <p className="text-xs font-mono uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>{label}</p>
-              <p className="text-2xl font-bold text-white">{value}</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div>
+            <div className="badge-mono mb-2 text-[10px]">
+              [ DASHBOARD ]
             </div>
-          ))}
+            <h1 className="text-3xl font-bold text-[#111111] mb-1">Links</h1>
+            <p className="text-xs sm:text-sm text-[#71717A]">Manage and monitor your shortened URLs.</p>
+          </div>
+          
+          {/* Action Row: Search & Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="relative flex-1 sm:flex-initial min-w-[200px]">
+              <Icons.search className="w-4 h-4 text-[#71717A] absolute left-3 top-2.5 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search links..."
+                className="w-full bg-[#FFFFFF] border border-[#DCD8CF] focus:border-[#4F46E5] rounded-lg py-2 pl-9 pr-3 text-xs text-[#111111] placeholder-[#71717A] focus:outline-none transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-[#71717A] hover:text-[#111111]"
+                >
+                  <Icons.x className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Filter chips */}
+            <div className="flex items-center bg-[#FFFFFF] border border-[#DCD8CF] rounded-lg p-1 text-xs">
+              <button
+                onClick={() => setFilterMode('all')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  filterMode === 'all' ? 'bg-[#F8F7F4] text-[#111111] font-semibold border border-[#DCD8CF]' : 'text-[#71717A] hover:text-[#111111]'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setFilterMode('active')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  filterMode === 'active' ? 'bg-[#F8F7F4] text-[#111111] font-semibold border border-[#DCD8CF]' : 'text-[#71717A] hover:text-[#111111]'
+                }`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setFilterMode('hightraffic')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  filterMode === 'hightraffic' ? 'bg-[#F8F7F4] text-[#111111] font-semibold border border-[#DCD8CF]' : 'text-[#71717A] hover:text-[#111111]'
+                }`}
+              >
+                High traffic
+              </button>
+            </div>
+
+            {/* Sort Dropdown */}
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as 'newest' | 'clicks')}
+              className="bg-[#FFFFFF] border border-[#DCD8CF] rounded-lg text-xs text-[#111111] px-3 py-2 focus:outline-none focus:border-[#4F46E5] cursor-pointer"
+            >
+              <option value="newest">Sort: Newest ↓</option>
+              <option value="clicks">Sort: Most clicked</option>
+            </select>
+          </div>
         </div>
 
-        {/* Delete error banner */}
-        {deleteError && (
-          <div className="mb-4 text-red-400 text-sm p-3 rounded-none border"
-            style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.2)' }}>
-            {deleteError}
-            <button className="ml-3 opacity-60 hover:opacity-100" onClick={() => setDeleteError(null)}>✕</button>
+        {/* Metric Cards (Real stats derived safely) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-[#FFFFFF] border border-[#DCD8CF] rounded-xl p-4 shadow-[0_1px_0_rgba(17,17,17,0.04)]">
+            <span className="text-[11px] text-[#71717A] font-mono uppercase block mb-1">Total Links</span>
+            <span className="text-2xl font-bold text-[#111111]">{links.length}</span>
           </div>
-        )}
 
-        {/* Links list */}
+          <div className="bg-[#FFFFFF] border border-[#DCD8CF] rounded-xl p-4 shadow-[0_1px_0_rgba(17,17,17,0.04)]">
+            <span className="text-[11px] text-[#71717A] font-mono uppercase block mb-1">Total Clicks</span>
+            <span className="text-2xl font-bold text-[#111111]">{totalClicks}</span>
+          </div>
+
+          <div className="bg-[#FFFFFF] border border-[#DCD8CF] rounded-xl p-4 shadow-[0_1px_0_rgba(17,17,17,0.04)]">
+            <span className="text-[11px] text-[#71717A] font-mono uppercase block mb-1">Avg. Clicks</span>
+            <span className="text-2xl font-bold text-[#111111]">
+              {links.length ? Math.round(totalClicks / links.length) : 0} <span className="text-xs font-normal text-[#71717A]">/ link</span>
+            </span>
+          </div>
+
+          <div className="bg-[#FFFFFF] border border-[#DCD8CF] rounded-xl p-4 shadow-[0_1px_0_rgba(17,17,17,0.04)] min-w-0">
+            <span className="text-[11px] text-[#71717A] font-mono uppercase block mb-1">Top Link</span>
+            {topLink ? (
+              <div>
+                <span className="text-sm font-bold text-[#4F46E5] block truncate">/{topLink.slug}</span>
+                <span className="text-xs text-[#71717A] font-mono">{topLink._count.clicks} clicks</span>
+              </div>
+            ) : (
+              <span className="text-sm text-[#71717A]">—</span>
+            )}
+          </div>
+        </div>
+
+        {/* Links List */}
         {loading ? (
           <div className="flex flex-col gap-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 rounded-none border animate-pulse"
-                style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }} />
+              <div key={i} className="h-20 bg-[#FFFFFF] border border-[#DCD8CF] rounded-xl animate-pulse" />
             ))}
           </div>
-        ) : links.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 rounded-none border"
-            style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
-            <Icons.api className="w-8 h-8 mb-3" style={{ color: '#3f3f46' }} />
-            <p className="text-sm font-mono mb-4" style={{ color: 'var(--muted)' }}>No links yet</p>
+        ) : filteredLinks.length === 0 ? (
+          /* Empty State */
+          <div className="bg-[#FFFFFF] border border-[#DCD8CF] rounded-xl p-12 text-center flex flex-col items-center shadow-[0_1px_0_rgba(17,17,17,0.04)]">
+            <div className="w-12 h-12 rounded-md bg-[#F8F7F4] border border-[#DCD8CF] flex items-center justify-center text-[#71717A] mb-4">
+              <Icons.search className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-[#111111] mb-1">No links found</h3>
+            <p className="text-xs text-[#71717A] mb-6 max-w-xs">
+              {searchQuery ? 'Try another search term or reset your filter criteria.' : 'Create your first short link to start tracking clicks.'}
+            </p>
             <button
-              onClick={() => { setAddError(''); setShowModal(true) }}
-              className="text-sm font-semibold px-4 py-2 rounded-none transition-colors"
-              style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
-              Shorten your first URL
+              onClick={() => { setAddError(''); setShowAddModal(true) }}
+              className="text-xs font-semibold text-white bg-[#111111] hover:bg-[#222222] px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-[0_1px_0_rgba(17,17,17,0.04)]"
+            >
+              <Icons.plus className="w-4 h-4" />
+              Create Link
             </button>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {links.map(link => {
-              const shortUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/${link.slug}`
-              const date = new Date(link.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            {filteredLinks.map(link => {
+              const shortUrl = `${origin}/${link.slug}`
+              const dateStr = new Date(link.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              const isCopied = copiedSlug === link.slug
 
               return (
-                <div key={link.id}
-                  className="rounded-none border p-4 transition-colors"
-                  style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = '#3f3f46'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--card-border)'}
+                <div
+                  key={link.id}
+                  className="bg-[#FFFFFF] hover:bg-[#FAF9F5] border border-[#DCD8CF] hover:border-[#C9C4B8] rounded-xl p-4 transition-all shadow-[0_1px_0_rgba(17,17,17,0.04)]"
                 >
-                  <div className="flex items-start justify-between gap-4">
-
-                    {/* Left */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    
+                    {/* Left details */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Icons.api className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--primary)' }} />
-                        <a href={shortUrl} target="_blank"
-                          className="text-sm font-semibold hover:underline truncate"
-                          style={{ color: 'var(--primary)' }}>
-                          /{link.slug}
+                        <Icons.link className="w-4 h-4 text-[#4F46E5] shrink-0" />
+                        <a
+                          href={shortUrl}
+                          target="_blank"
+                          className="text-sm font-bold text-[#111111] hover:text-[#4F46E5] truncate transition-colors font-mono"
+                        >
+                          {origin ? `${window.location.host}/${link.slug}` : link.slug}
                         </a>
                       </div>
-                      <p className="text-xs font-mono truncate mb-2" style={{ color: '#52525b' }}>
-                        {link.longUrl}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1 text-xs font-mono" style={{ color: 'var(--muted)' }}>
-                          <Icons.activity className="w-3 h-3" />
-                          {link._count.clicks} click{link._count.clicks !== 1 ? 's' : ''}
+                      <p className="text-xs font-mono text-[#71717A] truncate mb-2">{link.longUrl}</p>
+
+                      <div className="flex items-center gap-3 text-xs text-[#71717A]">
+                        <span className="flex items-center gap-1 font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-medium">
+                          ◉ {link._count.clicks} click{link._count.clicks !== 1 ? 's' : ''}
                         </span>
-                        <span className="text-xs font-mono" style={{ color: '#3f3f46' }}>·</span>
-                        <span className="text-xs font-mono" style={{ color: '#52525b' }}>{date}</span>
+                        <span>·</span>
+                        <span>Created {dateStr}</span>
                       </div>
                     </div>
 
-                    {/* Right — actions */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Link
-                        href={`/dashboard/${link.slug}`}
-                        className="text-xs font-mono px-3 py-1.5 rounded-none border transition-colors"
-                        style={{ borderColor: 'var(--card-border)', color: 'var(--muted)' }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--card-border)'; e.currentTarget.style.color = 'var(--muted)' }}
-                      >
-                        analytics
-                      </Link>
+                    {/* Right actions */}
+                    <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-[#DCD8CF]">
                       <button
                         onClick={() => handleCopy(link.slug)}
-                        className="text-xs font-mono px-3 py-1.5 rounded-none border transition-colors"
-                        style={{
-                          borderColor: copied === link.slug ? 'var(--primary)' : 'var(--card-border)',
-                          color: copied === link.slug ? 'var(--primary)' : 'var(--muted)',
-                        }}
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1 ${
+                          isCopied
+                            ? 'border-emerald-300 text-emerald-700 bg-emerald-50'
+                            : 'border-[#DCD8CF] text-[#111111] bg-[#F8F7F4] hover:bg-[#F0EEE8]'
+                        }`}
                       >
-                        {copied === link.slug ? 'copied!' : 'copy'}
+                        {isCopied ? <Icons.check className="w-3.5 h-3.5" /> : <Icons.copy className="w-3.5 h-3.5" />}
+                        {isCopied ? 'Copied' : 'Copy'}
                       </button>
-                      <button
-                        onClick={() => handleDelete(link.slug)}
-                        disabled={deleting === link.slug}
-                        className="text-xs font-mono px-3 py-1.5 rounded-none border transition-colors disabled:opacity-40"
-                        style={{ borderColor: 'var(--card-border)', color: 'var(--muted)' }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#f87171' }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--card-border)'; e.currentTarget.style.color = 'var(--muted)' }}
+
+                      <Link
+                        href={`/dashboard/${link.slug}`}
+                        className="text-xs font-medium text-[#111111] bg-[#F8F7F4] hover:bg-[#F0EEE8] border border-[#DCD8CF] px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
                       >
-                        {deleting === link.slug ? '...' : 'delete'}
+                        <Icons.barChart className="w-3.5 h-3.5 text-[#4F46E5]" />
+                        Analytics
+                      </Link>
+
+                      <button
+                        onClick={() => setQrState({ isOpen: true, shortUrl, slug: link.slug })}
+                        className="text-xs font-medium text-[#111111] bg-[#F8F7F4] hover:bg-[#F0EEE8] border border-[#DCD8CF] px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        <Icons.qrCode className="w-3.5 h-3.5 text-purple-600" />
+                        QR
+                      </button>
+
+                      <button
+                        onClick={() => confirmDelete(link.slug)}
+                        className="text-xs font-medium text-[#71717A] hover:text-red-600 hover:border-red-300 bg-[#F8F7F4] border border-[#DCD8CF] px-2.5 py-1.5 rounded-lg transition-colors"
+                        title="Delete link"
+                      >
+                        <Icons.trash className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -295,117 +432,97 @@ export default function Dashboard() {
         )}
       </main>
 
-      {/* Footer */}
-     <footer className="flex items-center justify-between px-6 py-6 border-t border-[var(--card-border)] bg-black mt-auto">
-       <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 uppercase tracking-widest">
-         <Icons.checkShield className="w-4 h-4" />
-         <span>AES-256 ENCRYPTION</span>
-       </div>
-       <div className="flex gap-6 text-xs font-mono text-zinc-500 uppercase tracking-widest">
-         <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
-         <Link href="#" className="hover:text-white transition-colors">Status</Link>
-       </div>
-     </footer>
-
       {/* New Link Modal */}
-      {showModal && (
+      {showAddModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
+          onClick={e => { if (e.target === e.currentTarget) setShowAddModal(false) }}
         >
-          <div
-            className="w-full max-w-md rounded-none border p-6"
-            style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-          >
+          <div className="w-full max-w-md rounded-xl border border-[#DCD8CF] bg-[#FFFFFF] p-6 shadow-[0_16px_40px_rgba(17,17,17,0.16)] relative animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-mono uppercase tracking-widest text-white">New Link</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-xs font-mono px-2 py-1"
-                style={{ color: 'var(--muted)' }}
-              >
-                ✕
+              <h2 className="text-base font-bold text-[#111111]">Create New Link</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-[#71717A] hover:text-[#111111]">
+                <Icons.x className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleAddLink} className="flex flex-col gap-4">
-              {/* Long URL */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-mono uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-                  Destination URL
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style={{ color: '#3f3f46' }}>
-                    <Icons.api className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="url"
-                    value={newUrl}
-                    onChange={e => setNewUrl(e.target.value)}
-                    placeholder="https://your-long-url.com/..."
-                    required
-                    autoFocus
-                    className="w-full text-sm rounded-none py-2.5 pl-10 pr-4 focus:outline-none focus:ring-1 transition-colors"
-                    style={{
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--input-border)',
-                      color: 'white',
-                    }}
-                  />
-                </div>
+              <div>
+                <label className="text-[11px] font-mono text-[#71717A] block mb-1.5 uppercase font-medium">Destination URL</label>
+                <input
+                  type="url"
+                  value={newUrl}
+                  onChange={e => setNewUrl(e.target.value)}
+                  placeholder="https://example.com/long-page"
+                  required
+                  autoFocus
+                  className="w-full bg-[#F8F7F4] border border-[#DCD8CF] rounded-lg py-2.5 px-3 text-sm text-[#111111] placeholder-[#71717A] focus:outline-none focus:border-[#4F46E5] transition-colors"
+                />
               </div>
 
-              {/* Custom Slug */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-mono uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-                  Custom Slug <span className="normal-case" style={{ color: '#3f3f46' }}>(optional)</span>
+              <div>
+                <label className="text-[11px] font-mono text-[#71717A] block mb-1.5 uppercase font-medium">
+                  Custom Slug <span className="text-[#71717A] normal-case">(optional)</span>
                 </label>
-                <div className="flex items-center rounded-none border overflow-hidden"
-                  style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)' }}>
-                  <span className="px-3 py-2.5 text-sm border-r font-mono" style={{ color: '#3f3f46', borderColor: 'var(--input-border)' }}>
-                    {typeof window !== 'undefined' ? window.location.host : ''}/
+                <div className="flex items-center rounded-lg border border-[#DCD8CF] bg-[#F8F7F4] overflow-hidden">
+                  <span className="px-3 py-2.5 text-xs font-mono text-[#71717A] border-r border-[#DCD8CF]">
+                    {origin ? `${window.location.host}/` : 'snapurl.dev/'}
                   </span>
                   <input
                     type="text"
                     value={newSlug}
-                    onChange={e => setNewSlug(e.target.value)}
+                    onChange={e => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
                     placeholder="my-link"
-                    className="flex-1 bg-transparent text-sm py-2.5 px-3 focus:outline-none"
-                    style={{ color: 'white' }}
+                    className="flex-1 bg-transparent px-3 py-2.5 text-xs font-mono text-[#111111] focus:outline-none"
                   />
                 </div>
               </div>
 
               {addError && (
-                <div className="text-red-400 text-sm p-3 rounded-none border"
-                  style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.2)' }}>
+                <div className="text-xs text-red-600 bg-red-50 border border-red-200 p-2.5 rounded-lg">
                   {addError}
                 </div>
               )}
 
-              <div className="flex gap-3 mt-1">
+              <div className="flex gap-3 mt-2">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 text-sm font-mono py-2.5 rounded-none border transition-colors"
-                  style={{ borderColor: 'var(--card-border)', color: 'var(--muted)' }}
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 text-xs font-medium text-[#111111] bg-[#F8F7F4] hover:bg-[#F0EEE8] border border-[#DCD8CF] py-2.5 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addLoading}
-                  className="flex-1 font-semibold py-2.5 rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+                  className="flex-1 text-xs font-semibold text-white bg-[#111111] hover:bg-[#222222] py-2.5 rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {addLoading ? 'Shortening...' : 'Shorten URL'}
+                  {addLoading ? 'Creating...' : 'Create Link'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* QR Code Modal */}
+      <QRModal
+        isOpen={qrState.isOpen}
+        onClose={() => setQrState(prev => ({ ...prev, isOpen: false }))}
+        shortUrl={qrState.shortUrl}
+        slug={qrState.slug}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteState.isOpen}
+        title="Delete this link?"
+        description="This action cannot be undone. Redirects to this link will immediately stop working."
+        confirmText="Delete"
+        loading={deleteState.loading}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteState({ isOpen: false, slug: null, loading: false })}
+      />
     </div>
   )
 }

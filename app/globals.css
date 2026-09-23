@@ -1,40 +1,127 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
-  
-  --card-bg: #000000;
-  --card-border: #333333;
-  --input-bg: #000000;
-  --input-border: #333333;
-  
-  --primary: #ffffff;
-  --primary-hover: #e5e5e5;
-  --primary-foreground: #000000;
-  
-  --muted: #a1a1aa;
+  --background: #F8F7F4;
+  --foreground: #111111;
+
+  --surface: #FFFFFF;
+  --surface-dark: #111111;
+
+  --primary: #4F46E5;
+  --primary-hover: #4338CA;
+  --primary-foreground: #ffffff;
+
+  --border: #DCD8CF;
+  --border-dark: #C9C4B8;
+  --border-hover: #B8B2A6;
+
+  --muted: #71717A;
+  --muted-light: #A1A1AA;
+
+  --success: #16A34A;
+  --error: #DC2626;
+  --warning: #D97706;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
+}
+
+* {
+  border-color: var(--border);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0;
 }
 
-/* Custom styles for inputs to remove default styling */
+/* Monospace technical badge helper */
+.badge-mono {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background-color: #EFECE6;
+  border: 1px solid #DCD8CF;
+  color: #333333;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Subtle background grid lines for hero/sections */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(226, 224, 216, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(226, 224, 216, 0.4) 1px, transparent 1px);
+}
+
+/* Custom text selection */
+::selection {
+  background-color: rgba(79, 70, 229, 0.15);
+  color: #111111;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: #C9C4B8;
+  border-radius: var(--radius-md);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A1A1AA;
+}
+
+/* Focus visible styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Custom autofill override for light surface inputs */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
-input:-webkit-autofill:active{
-    -webkit-box-shadow: 0 0 0 30px var(--input-bg) inset !important;
-    -webkit-text-fill-color: var(--foreground) !important;
-    transition: background-color 5000s ease-in-out 0s;
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #FFFFFF inset !important;
+  -webkit-text-fill-color: #111111 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Subtle transitions */
+.transition-standard {
+  transition-property: color, background-color, border-color, transform, opacity, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

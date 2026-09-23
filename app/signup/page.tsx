@@ -1,193 +1,163 @@
-"use client";
+'use client'
 
-import React, { useState } from "react";
-import { Icons } from "@/components/icons";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Icons } from '@/components/icons'
+import { useToast } from '@/components/toast'
 
 export default function SignupPage() {
-  const router = useRouter();
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const router = useRouter()
+  const { addToast } = useToast()
+
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+    e.preventDefault()
+    setError('')
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
+      const errStr = 'Passwords do not match'
+      setError(errStr)
+      addToast(errStr, 'error')
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
 
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-      });
+      })
 
-      const data = await res.json();
+      const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to sign up");
+        throw new Error(data.error || 'Failed to create account')
       }
 
-      localStorage.setItem("token", data.token);
-      router.push("/dashboard");
+      localStorage.setItem('token', data.token)
+      addToast('Account created successfully', 'success')
+      router.push('/dashboard')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to sign up");
+      const msg = err instanceof Error ? err.message : 'Failed to create account'
+      setError(msg)
+      addToast(msg, 'error')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-1 flex w-full">
-        {/* Left Column - Form */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8">
-          <div className="w-full max-w-[500px]">
-            <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-none p-8">
-              <h1 className="text-3xl font-semibold text-white mb-2">Create an account</h1>
-              <p className="text-zinc-400 text-sm mb-8">Start optimizing your link performance today.</p>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#F8F7F4] text-[#111111] bg-grid-pattern">
+      
+      <div className="w-full max-w-sm flex flex-col items-center">
+        
+        {/* Header */}
+        <Link href="/" className="flex items-center gap-2.5 mb-8 group">
+          <div className="w-10 h-10 rounded-xl bg-[#111111] flex items-center justify-center text-white transition-transform group-hover:scale-105">
+            <Icons.SnapLink className="w-5 h-5 text-indigo-400" />
+          </div>
+          <span className="font-bold text-xl text-[#111111]">SnapURL</span>
+        </Link>
 
-              {/* Form */}
-              <form onSubmit={handleSignup} className="flex flex-col gap-5">
-                {error && (
-                  <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded-none border border-red-400/20">
-                    {error}
-                  </div>
-                )}
+        {/* Technical Badge */}
+        <div className="badge-mono mb-4 text-[10px]">
+          [ NEW ACCOUNT ]
+        </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-zinc-400 uppercase tracking-wide">Full Name</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Alex Rivera"
-                    required
-                    className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
-                  />
-                </div>
+        {/* Form Card */}
+        <div className="w-full bg-[#FFFFFF] border border-[#DCD8CF] rounded-xl p-6 sm:p-8 shadow-[0_1px_0_rgba(17,17,17,0.05)]">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-[#111111] mb-1">Create an account</h1>
+            <p className="text-xs text-[#71717A]">Start shortening & tracking links today.</p>
+          </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-zinc-400 uppercase tracking-wide">Email Address</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="alex@company.com"
-                    required
-                    className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
-                  />
-                </div>
+          <form onSubmit={handleSignup} className="flex flex-col gap-4">
+            {error && (
+              <div className="text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded-lg text-center">
+                {error}
+              </div>
+            )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-mono text-zinc-400 uppercase tracking-wide">Password</label>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-mono text-zinc-400 uppercase tracking-wide">Confirm</label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] text-sm rounded-none py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-transparent text-white placeholder-zinc-600 transition-colors"
-                    />
-                  </div>
-                </div>
+            <div>
+              <label className="text-[11px] font-mono text-[#71717A] block mb-1.5 uppercase font-medium">Full Name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                placeholder="Alex Rivera"
+                required
+                className="w-full bg-[#F8F7F4] border border-[#DCD8CF] rounded-lg py-2.5 px-3 text-sm text-[#111111] placeholder-[#71717A] focus:outline-none focus:border-[#4F46E5] transition-colors"
+              />
+            </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-foreground)] font-semibold py-3 rounded-none transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "Signing up..." : "Sign up"}
-                </button>
-              </form>
+            <div>
+              <label className="text-[11px] font-mono text-[#71717A] block mb-1.5 uppercase font-medium">Email Address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                required
+                className="w-full bg-[#F8F7F4] border border-[#DCD8CF] rounded-lg py-2.5 px-3 text-sm text-[#111111] placeholder-[#71717A] focus:outline-none focus:border-[#4F46E5] transition-colors"
+              />
+            </div>
 
-              <div className="text-center text-sm text-zinc-400 mt-6">
-                Already have an account?{" "}
-                <Link href="/login" className="text-white font-semibold hover:underline">
-                  Log in
-                </Link>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-mono text-[#71717A] block mb-1.5 uppercase font-medium">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-[#F8F7F4] border border-[#DCD8CF] rounded-lg py-2.5 px-3 text-sm text-[#111111] placeholder-[#71717A] focus:outline-none focus:border-[#4F46E5] transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-mono text-[#71717A] block mb-1.5 uppercase font-medium">Confirm</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-[#F8F7F4] border border-[#DCD8CF] rounded-lg py-2.5 px-3 text-sm text-[#111111] placeholder-[#71717A] focus:outline-none focus:border-[#4F46E5] transition-colors"
+                />
               </div>
             </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full text-sm font-semibold text-white bg-[#111111] hover:bg-[#222222] py-2.5 rounded-lg transition-colors mt-2 disabled:opacity-50"
+            >
+              {loading ? 'Creating account...' : 'Sign up →'}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center text-xs text-[#71717A]">
+            Already have an account?{' '}
+            <Link href="/login" className="text-[#111111] font-semibold hover:underline">
+              Log in
+            </Link>
           </div>
         </div>
 
-        {/* Right Column - Marketing */}
-        <div className="hidden lg:flex w-1/2 flex-col justify-center p-16 pl-8">
-          <div className="max-w-[600px]">
-            <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest mb-4">
-              THE ENTERPRISE STANDARD
-            </p>
-            <h2 className="text-5xl font-bold text-white leading-tight mb-6">
-              Scale your links with Obsidian precision.
-            </h2>
-            <p className="text-lg text-zinc-400 mb-10 leading-relaxed">
-              Join 10,000+ developers and marketing teams using SnapLink to drive real-time decision making with industrial-grade analytics.
-            </p>
-
-            <div className="flex flex-col gap-4">
-              {/* Feature Cards */}
-              <div className="flex items-start gap-4 p-5 rounded-none border border-[var(--card-border)] bg-[var(--card-bg)]">
-                <div className="bg-blue-500/20 p-2 rounded-none shrink-0 mt-1">
-                  <Icons.activity className="w-5 h-5 text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium mb-1">Instant Analytics</h3>
-                  <p className="text-sm text-zinc-400">
-                    Sub-second latency on click tracking and geographic data distribution.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-5 rounded-none border border-[var(--card-border)] bg-[var(--card-bg)]">
-                <div className="bg-purple-500/20 p-2 rounded-none shrink-0 mt-1">
-                  <Icons.shield className="w-5 h-5 text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium mb-1">Enterprise Security</h3>
-                  <p className="text-sm text-zinc-400">
-                    256-bit encryption, role-based access control, and SSO integration for teams.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-5 rounded-none border border-[var(--card-border)] bg-[var(--card-bg)]">
-                <div className="bg-zinc-700/50 p-2 rounded-none shrink-0 mt-1">
-                  <Icons.api className="w-5 h-5 text-zinc-300" />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium mb-1">Developer First API</h3>
-                  <p className="text-sm text-zinc-400">
-                    GraphQL and REST endpoints designed for high-throughput automation.
-                  </p>
-                </div>
-              </div>
-            </div>
-           
-          </div>
+        {/* Footer info */}
+        <div className="mt-8 text-center text-[11px] text-[#71717A] font-mono">
+          <span>Free plan includes unlimited short links & analytics</span>
         </div>
       </div>
     </div>
-  );
+  )
 }
